@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { buildExportPayload, downloadJson } from "@/lib/exportJson";
 
 export default function WordsPage() {
   const [words, setWords] = useState<string[]>([]);
@@ -26,13 +27,33 @@ export default function WordsPage() {
     });
   }, []);
 
+  const exportWords = useCallback(() => {
+    const date = new Date().toISOString().slice(0, 10);
+    downloadJson(
+      `wordlens-vocabulary-${date}.json`,
+      buildExportPayload("vocabulary", words),
+    );
+  }, [words]);
+
   return (
     <main className="mx-auto min-h-screen max-w-2xl p-6">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">📚 My vocabulary</h1>
-        <a href="/viewer" className="text-sm text-slate-400 underline">
-          ← Back to viewer
-        </a>
+        <div className="flex items-center gap-3">
+          {words.length > 0 && (
+            <button
+              type="button"
+              data-testid="export-vocabulary"
+              onClick={exportWords}
+              className="rounded-xl bg-slate-800 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-700 hover:text-white"
+            >
+              Export JSON
+            </button>
+          )}
+          <a href="/viewer" className="text-sm text-slate-400 underline">
+            ← Back to viewer
+          </a>
+        </div>
       </header>
       <p className="mb-4 text-sm text-slate-500">
         Words you marked as known. Remove one to see it again.

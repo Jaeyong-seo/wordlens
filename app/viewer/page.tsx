@@ -2,6 +2,7 @@
 
 import QRCode from "qrcode";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buildExportPayload, downloadJson } from "@/lib/exportJson";
 import { speakWord } from "@/lib/speak";
 import { useWakeLock } from "@/lib/useWakeLock";
 import type { SnapshotEvent, WordCard, WordsEvent } from "@/lib/types";
@@ -132,6 +133,14 @@ export default function ViewerPage() {
     [code],
   );
 
+  const exportSession = useCallback(() => {
+    const date = new Date().toISOString().slice(0, 10);
+    downloadJson(
+      `wordlens-session-${date}.json`,
+      buildExportPayload("session", Array.from(words.values())),
+    );
+  }, [words]);
+
   const { current, older } = useMemo(() => {
     const all = Array.from(words.values());
     const sortFn = (a: WordCard, b: WordCard) =>
@@ -165,9 +174,21 @@ export default function ViewerPage() {
             </span>
           </p>
         </div>
-        <a href="/words" className="text-sm text-slate-400 underline">
-          My vocabulary →
-        </a>
+        <div className="flex items-center gap-3">
+          {words.size > 0 && (
+            <button
+              type="button"
+              data-testid="export-session"
+              onClick={exportSession}
+              className="text-sm text-slate-400 underline transition hover:text-slate-200"
+            >
+              Export
+            </button>
+          )}
+          <a href="/words" className="text-sm text-slate-400 underline">
+            My vocabulary →
+          </a>
+        </div>
       </header>
 
       {words.size === 0 && (
