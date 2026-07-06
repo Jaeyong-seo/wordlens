@@ -1,0 +1,23 @@
+{
+  "serendipity": {
+    "word": "serendipity",
+    "phonetic": "/ˌserənˈdɪpəti/",
+    "meaning": "뜻밖의 행운, 우연한 발견",
+    "example": "Meeting her was pure serendipity.",
+    "source": "mock"
+  },
+  "ephemeral": {
+    "word": "ephemeral",
+    "phonetic": "/ɪˈfemərəl/",
+    "meaning": "수명이 짧은, 덧없는",
+    "example": "Fame in the internet age is ephemeral.",
+    "source": "mock"
+  },
+  "meticulous": {
+    "word": "meticulous",
+    "phonetic": "/məˈtɪkjələs/",
+    "meaning": "꼼꼼한, 세심한",
+    "example": "She kept meticulous notes of every meeting.",
+    "source": "mock"
+  }
+}
