@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractUnderlinedWords, isMockMode } from "@/lib/ai";
 import { lookupDefinition } from "@/lib/dictionary";
-import { filterUnknown, getKnownWords } from "@/lib/knownWords";
+import { filterUnknown, getKnownWordsAsync } from "@/lib/knownWords";
 import { normalizeWords } from "@/lib/normalize";
-import { addWordCards, bumpPage, getRoom } from "@/lib/rooms";
+import { addWordCards, bumpPage } from "@/lib/rooms";
+import { loadRoomForMutation, persistRoom } from "@/lib/roomStore";
 import type { FramePayload, WordCard } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +34,11 @@ export async function POST(request: NextRequest) {
   if (!body.room) {
     return NextResponse.json({ error: "room is required" }, { status: 400 });
   }
-  const room = getRoom(body.room);
-  if (!room) {
+  const loaded = await loadRoomForMutation(body.room);
+  if (!loaded) {
     return NextResponse.json({ error: "room not found" }, { status: 404 });
   }
+  const { room, version } = loaded;
 
   if (body.pageChanged) {
     bumpPage(room);
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
   }
 
   const words = normalizeWords(extracted);
-  const unknown = filterUnknown(words, getKnownWords());
+  const unknown = filterUnknown(words, await getKnownWordsAsync());
 
   const cards: WordCard[] = [];
   for (const word of unknown) {
@@ -72,6 +74,9 @@ export async function POST(request: NextRequest) {
     });
   }
   const { added, updated } = addWordCards(room, cards);
+  if (added.length > 0 || updated.length > 0 || body.pageChanged) {
+    await persistRoom(room, version);
+  }
 
   return NextResponse.json({
     pageId: room.pageId,
