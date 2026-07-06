@@ -20,3 +20,4 @@
 *.tsbuildinfo
 next-env.d.ts
 /.data-e2e/
+.vercel

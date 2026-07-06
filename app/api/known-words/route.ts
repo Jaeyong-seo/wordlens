@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  addKnownWord,
-  getKnownWords,
-  removeKnownWord,
+  addKnownWordAsync,
+  getKnownWordsAsync,
+  removeKnownWordAsync,
 } from "@/lib/knownWords";
-import { getRoom, removeWord } from "@/lib/rooms";
+import { removeWord } from "@/lib/rooms";
+import { loadRoomForMutation, persistRoom } from "@/lib/roomStore";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json({ words: Array.from(getKnownWords()).sort() });
+  const words = await getKnownWordsAsync();
+  return NextResponse.json({ words: Array.from(words).sort() });
 }
 
 /** Mark a word as known; optionally remove it from a live room. */
@@ -24,12 +26,14 @@ export async function POST(request: NextRequest) {
   if (!word) {
     return NextResponse.json({ error: "word is required" }, { status: 400 });
   }
-  const words = addKnownWord(word);
+  const total = await addKnownWordAsync(word);
   if (body.room) {
-    const room = getRoom(body.room);
-    if (room) removeWord(room, word);
+    const loaded = await loadRoomForMutation(body.room);
+    if (loaded && removeWord(loaded.room, word)) {
+      await persistRoom(loaded.room, loaded.version);
+    }
   }
-  return NextResponse.json({ ok: true, total: words.size });
+  return NextResponse.json({ ok: true, total });
 }
 
 /** Un-know a word (vocabulary management). */
@@ -44,6 +48,6 @@ export async function DELETE(request: NextRequest) {
   if (!word) {
     return NextResponse.json({ error: "word is required" }, { status: 400 });
   }
-  const words = removeKnownWord(word);
-  return NextResponse.json({ ok: true, total: words.size });
+  const total = await removeKnownWordAsync(word);
+  return NextResponse.json({ ok: true, total });
 }

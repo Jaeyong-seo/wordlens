@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { isMockMode, llmDefine, type LlmDefinition } from "@/lib/ai";
+import { isRedisConfigured, redisGetJson, redisSetJson } from "@/lib/redis";
 import type { Definition } from "@/lib/types";
+
+const DICT_CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 const DICT_API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en";
 const DICT_TIMEOUT_MS = 4_000;
@@ -15,8 +18,8 @@ export interface DictSourceResult {
 export interface LookupDeps {
   fetchDict: (word: string) => Promise<DictSourceResult | null>;
   llmDefine: (word: string) => Promise<LlmDefinition | null>;
-  cacheGet: (word: string) => Definition | null;
-  cacheSet: (word: string, def: Definition) => void;
+  cacheGet: (word: string) => Definition | null | Promise<Definition | null>;
+  cacheSet: (word: string, def: Definition) => void | Promise<void>;
 }
 
 function dataDir(): string {
@@ -81,6 +84,20 @@ async function fetchDictionaryApi(
 }
 
 export function defaultDeps(): LookupDeps {
+  if (isRedisConfigured()) {
+    return {
+      fetchDict: fetchDictionaryApi,
+      llmDefine,
+      cacheGet: (word) =>
+        redisGetJson<Definition>(`wordlens:dict:${word.toLowerCase()}`),
+      cacheSet: (word, def) =>
+        redisSetJson(
+          `wordlens:dict:${word.toLowerCase()}`,
+          def,
+          DICT_CACHE_TTL_SECONDS,
+        ),
+    };
+  }
   return {
     fetchDict: fetchDictionaryApi,
     llmDefine,
@@ -102,7 +119,7 @@ export async function lookupDefinition(
   deps: LookupDeps = defaultDeps(),
 ): Promise<Definition> {
   const normalized = word.trim().toLowerCase();
-  const cached = deps.cacheGet(normalized);
+  const cached = await deps.cacheGet(normalized);
   if (cached) return cached;
 
   let phonetic: string | undefined;
@@ -145,6 +162,6 @@ export async function lookupDefinition(
     example,
     source,
   };
-  deps.cacheSet(normalized, def);
+  await deps.cacheSet(normalized, def);
   return def;
 }
