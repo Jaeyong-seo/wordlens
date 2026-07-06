@@ -32,9 +32,10 @@ Build log for the overnight WordLens goal. (All times local, 2026-07-06)
 
 ## Mocked / deferred
 
-- **MOCK MODE** is the default without `OPENROUTER_API_KEY`. The key was copied from
-  66days/.env.local, so real vision extraction is wired but **untested against a real
-  book photo** — that's the morning acceptance step (lighting/angle tuning may be needed).
+- **MOCK MODE** is the default without `OPENROUTER_API_KEY`. With a key configured in
+  `.env.local`, real vision extraction is wired but was **not exercised against a real
+  book photo** during the overnight build — that's the morning acceptance step
+  (lighting/angle tuning may be needed).
 - dictionaryapi.dev integration is code-complete but skipped in mock mode (unit-tested
   via injected deps only).
 - P2 (session JSON export) not built — time-boxed out.
