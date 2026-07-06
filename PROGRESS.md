@@ -40,6 +40,24 @@ Build log for the overnight WordLens goal. (All times local, 2026-07-06)
 - P2 (session JSON export) not built — time-boxed out.
 - PWA: manifest only (no service worker/offline; not needed for the demo).
 
+## Reviewer pass (separate code-reviewer agent)
+
+Verdict: no CRITICAL. 1 HIGH + 4 MEDIUM found — **all 5 fixed and re-verified**:
+
+- **HIGH** camera MediaStream leak when unmounting during a pending `getUserMedia`
+  → tracks now stopped if the effect was torn down before the promise resolved
+- **MEDIUM** viewer stuck on "재연결 중" forever if the room vanished (server restart)
+  → on SSE error the viewer verifies the room and mints a fresh one when gone
+- **MEDIUM** SSE subscriber + heartbeat leak when a connection died without `cancel()`
+  → enqueue failure now triggers full teardown (unsubscribe, clearInterval, close)
+- **MEDIUM** rooms never evicted (unbounded memory)
+  → lazy sweep on create/get: subscriber-less rooms older than 12h are dropped (+ unit test)
+- **MEDIUM** `/api/frame` accepted unbounded bodies
+  → 4MB content-length/image cap (413), mockWords capped at 20
+
+LOW findings (stale `status` closure in the capture interval, minor) deferred — noted, no
+functional impact on the demo.
+
 ## Failures & fixes along the way
 
 - `tsc` error in `useWakeLock` (custom Navigator interface clashed with built-in DOM

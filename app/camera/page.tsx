@@ -79,7 +79,12 @@ export default function CameraPage() {
           video: { facingMode: "environment", width: { ideal: 1280 } },
           audio: false,
         });
-        if (disposed || !videoRef.current) return;
+        if (disposed || !videoRef.current) {
+          // effect torn down while the permission prompt was pending:
+          // stop the just-acquired tracks or the camera stays on forever
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
         setCameraError(null);

@@ -17,14 +17,28 @@ export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
   let unsubscribe: (() => void) | null = null;
   let heartbeat: ReturnType<typeof setInterval> | null = null;
+  let closed = false;
 
   const stream = new ReadableStream({
     start(controller) {
+      const teardown = () => {
+        if (closed) return;
+        closed = true;
+        unsubscribe?.();
+        if (heartbeat) clearInterval(heartbeat);
+        try {
+          controller.close();
+        } catch {
+          // already closed by the runtime
+        }
+      };
       const send = (chunk: string) => {
+        if (closed) return;
         try {
           controller.enqueue(encoder.encode(chunk));
         } catch {
-          // stream closed under us; unsubscribe on next cancel
+          // connection died without cancel(): release subscriber + heartbeat
+          teardown();
         }
       };
       unsubscribe = subscribe(room, send);
@@ -32,6 +46,7 @@ export async function GET(request: NextRequest) {
       heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
     },
     cancel() {
+      closed = true;
       unsubscribe?.();
       if (heartbeat) clearInterval(heartbeat);
     },

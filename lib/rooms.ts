@@ -25,6 +25,22 @@ function roomsMap(): Map<string, Room> {
 
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L
 
+/** Idle rooms (no subscribers) older than this are swept lazily. */
+export const ROOM_TTL_MS = 12 * 60 * 60 * 1000;
+
+/** Drop expired subscriber-less rooms; called on every create/get. */
+export function sweepRooms(now = Date.now()): number {
+  const rooms = roomsMap();
+  let swept = 0;
+  rooms.forEach((room, code) => {
+    if (room.subscribers.size === 0 && now - room.createdAt > ROOM_TTL_MS) {
+      rooms.delete(code);
+      swept++;
+    }
+  });
+  return swept;
+}
+
 export function generateRoomCode(): string {
   let code = "";
   for (let i = 0; i < 6; i++) {
@@ -34,6 +50,7 @@ export function generateRoomCode(): string {
 }
 
 export function createRoom(): Room {
+  sweepRooms();
   const rooms = roomsMap();
   let code = generateRoomCode();
   while (rooms.has(code)) code = generateRoomCode();
@@ -50,6 +67,7 @@ export function createRoom(): Room {
 }
 
 export function getRoom(code: string): Room | undefined {
+  sweepRooms();
   return roomsMap().get(code.trim().toUpperCase());
 }
 

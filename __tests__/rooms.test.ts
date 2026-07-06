@@ -8,8 +8,10 @@ import {
   generateRoomCode,
   getRoom,
   removeWord,
+  ROOM_TTL_MS,
   snapshot,
   subscribe,
+  sweepRooms,
 } from "@/lib/rooms";
 import type { WordCard } from "@/lib/types";
 
@@ -35,6 +37,20 @@ describe("room lifecycle", () => {
     const room = createRoom();
     expect(getRoom(room.code.toLowerCase())).toBe(room);
     expect(getRoom("XXXXXX")).toBeUndefined();
+  });
+
+  it("sweeps expired subscriber-less rooms but keeps active ones", () => {
+    const stale = createRoom();
+    stale.createdAt = Date.now() - ROOM_TTL_MS - 1;
+    const staleButSubscribed = createRoom();
+    staleButSubscribed.createdAt = Date.now() - ROOM_TTL_MS - 1;
+    subscribe(staleButSubscribed, () => undefined);
+    const fresh = createRoom();
+
+    sweepRooms();
+    expect(getRoom(stale.code)).toBeUndefined();
+    expect(getRoom(staleButSubscribed.code)).toBe(staleButSubscribed);
+    expect(getRoom(fresh.code)).toBe(fresh);
   });
 });
 

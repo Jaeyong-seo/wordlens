@@ -17,6 +17,7 @@ export default function ViewerPage() {
   const [words, setWords] = useState<Map<string, WordCard>>(new Map());
   const [currentPageId, setCurrentPageId] = useState(1);
   const sourceRef = useRef<EventSource | null>(null);
+  const recoveringRef = useRef(false);
 
   // Create a room, or re-join the one from a previous load if still alive.
   useEffect(() => {
@@ -59,7 +60,31 @@ export default function ViewerPage() {
     const source = new EventSource(`/api/events?room=${code}`);
     sourceRef.current = source;
     source.onopen = () => setConnection("live");
-    source.onerror = () => setConnection("reconnecting");
+    source.onerror = () => {
+      setConnection("reconnecting");
+      // If the room vanished server-side (dev restart), EventSource would
+      // retry a 404 forever — verify and mint a fresh room instead.
+      if (recoveringRef.current) return;
+      recoveringRef.current = true;
+      void (async () => {
+        try {
+          const res = await fetch(`/api/room?code=${code}`);
+          const json = (await res.json()) as { exists: boolean };
+          if (!json.exists) {
+            const created = await fetch("/api/room", { method: "POST" });
+            const next = (await created.json()) as { code: string };
+            window.localStorage.setItem(ROOM_STORAGE_KEY, next.code);
+            setWords(new Map());
+            setCurrentPageId(1);
+            setCode(next.code);
+          }
+        } catch {
+          // server unreachable; let EventSource keep retrying
+        } finally {
+          recoveringRef.current = false;
+        }
+      })();
+    };
     source.addEventListener("snapshot", (e) => {
       const data = JSON.parse((e as MessageEvent).data) as SnapshotEvent;
       const next = new Map<string, WordCard>();
