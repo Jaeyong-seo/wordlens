@@ -29,19 +29,18 @@ export default function WordsPage() {
   return (
     <main className="mx-auto min-h-screen max-w-2xl p-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">📚 내 단어장</h1>
+        <h1 className="text-2xl font-bold">📚 My vocabulary</h1>
         <a href="/viewer" className="text-sm text-slate-400 underline">
-          ← 뷰어로
+          ← Back to viewer
         </a>
       </header>
       <p className="mb-4 text-sm text-slate-500">
-        &quot;알아요&quot;로 표시한 단어들입니다. 다시 표시되게 하려면
-        제거하세요.
+        Words you marked as known. Remove one to see it again.
       </p>
       {loading ? (
-        <p className="text-slate-500">불러오는 중…</p>
+        <p className="text-slate-500">Loading…</p>
       ) : words.length === 0 ? (
-        <p className="text-slate-600">아직 아는 단어로 표시한 것이 없습니다.</p>
+        <p className="text-slate-600">No known words yet.</p>
       ) : (
         <ul className="space-y-2">
           {words.map((word) => (
@@ -55,7 +54,7 @@ export default function WordsPage() {
                 onClick={() => void unknow(word)}
                 className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm text-slate-400 transition hover:bg-red-900 hover:text-white"
               >
-                제거
+                Remove
               </button>
             </li>
           ))}

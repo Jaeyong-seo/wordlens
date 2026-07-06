@@ -2,6 +2,7 @@
 
 import QRCode from "qrcode";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { speakWord } from "@/lib/speak";
 import { useWakeLock } from "@/lib/useWakeLock";
 import type { SnapshotEvent, WordCard, WordsEvent } from "@/lib/types";
 
@@ -146,10 +147,10 @@ export default function ViewerPage() {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            Word<span className="text-red-500">Lens</span> 뷰어
+            Word<span className="text-red-500">Lens</span> Viewer
           </h1>
           <p className="text-sm text-slate-400">
-            연결 상태:{" "}
+            Connection:{" "}
             <span
               data-testid="connection-status"
               className={
@@ -157,21 +158,23 @@ export default function ViewerPage() {
               }
             >
               {connection === "live"
-                ? "실시간 연결됨"
+                ? "Live"
                 : connection === "connecting"
-                  ? "연결 중…"
-                  : "재연결 중…"}
+                  ? "Connecting…"
+                  : "Reconnecting…"}
             </span>
           </p>
         </div>
         <a href="/words" className="text-sm text-slate-400 underline">
-          내 단어장 →
+          My vocabulary →
         </a>
       </header>
 
       {words.size === 0 && (
         <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center">
-          <p className="mb-2 text-slate-300">폰에서 아래 코드로 접속하세요</p>
+          <p className="mb-2 text-slate-300">
+            Enter this code on your phone
+          </p>
           <p
             data-testid="room-code"
             className="text-5xl font-bold tracking-[0.3em] text-red-400"
@@ -182,31 +185,31 @@ export default function ViewerPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={qrDataUrl}
-              alt="카메라 페이지 QR 코드"
+              alt="QR code linking to the camera page"
               className="mx-auto mt-4 rounded-lg bg-white p-2"
             />
           )}
           <p className="mt-4 text-sm text-slate-500">
-            폰 브라우저에서 <code>/camera</code>를 열고 코드를 입력하거나 QR을
-            스캔하세요.
+            Scan the QR code, or open <code>/camera</code> on your phone and
+            type the code.
           </p>
         </section>
       )}
 
       {words.size > 0 && (
         <p className="mb-4 text-xs text-slate-500">
-          방 코드: <span data-testid="room-code">{code}</span>
+          Room code: <span data-testid="room-code">{code}</span>
         </p>
       )}
 
-      <section aria-label="현재 페이지 단어">
+      <section aria-label="current page words">
         <h2 className="mb-3 text-lg font-semibold text-slate-300">
-          📖 현재 페이지{" "}
+          📖 Current page{" "}
           <span className="text-sm text-slate-500">p.{currentPageId}</span>
         </h2>
         {current.length === 0 ? (
           <p className="mb-6 text-slate-600">
-            빨간 펜으로 밑줄을 치면 여기에 단어가 나타납니다.
+            Underline a word in red — it will appear here.
           </p>
         ) : (
           <ul className="mb-8 space-y-3">
@@ -218,9 +221,9 @@ export default function ViewerPage() {
       </section>
 
       {older.length > 0 && (
-        <section aria-label="이전 페이지 단어">
+        <section aria-label="earlier page words">
           <h2 className="mb-3 text-lg font-semibold text-slate-500">
-            이전 페이지
+            Earlier pages
           </h2>
           <ul className="space-y-2">
             {older.map((w) => (
@@ -273,13 +276,48 @@ function WordCardItem({
             </p>
           )}
         </div>
-        <button
-          data-testid={`know-button-${card.word}`}
-          onClick={() => onKnown(card.word)}
-          className="shrink-0 rounded-xl bg-slate-800 px-4 py-2 text-sm text-slate-300 transition hover:bg-green-800 hover:text-white"
-        >
-          알아요
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <button
+            data-testid={`speak-button-${card.word}`}
+            onClick={() => speakWord(card.word)}
+            aria-label={`Pronounce ${card.word}`}
+            title="Pronounce"
+            className="rounded-xl bg-slate-800 p-2.5 text-slate-300 transition hover:bg-sky-800 hover:text-white"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+            >
+              <path d="M11 5 6 9H2v6h4l5 4V5z" />
+              <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+              <path d="M18.8 5.8a9 9 0 0 1 0 12.4" />
+            </svg>
+          </button>
+          <button
+            data-testid={`know-button-${card.word}`}
+            onClick={() => onKnown(card.word)}
+            aria-label={`I know ${card.word}`}
+            title="I know this word"
+            className="rounded-xl bg-slate-800 p-2.5 text-slate-300 transition hover:bg-green-800 hover:text-white"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </button>
+        </div>
       </div>
     </li>
   );

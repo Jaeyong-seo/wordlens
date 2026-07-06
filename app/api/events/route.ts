@@ -3,6 +3,8 @@ import { formatSseEvent, getRoom, snapshot, subscribe } from "@/lib/rooms";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+/** Keep the SSE stream alive as long as the platform allows (Vercel: 300s). */
+export const maxDuration = 300;
 
 const HEARTBEAT_MS = 15_000;
 

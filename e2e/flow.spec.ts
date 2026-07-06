@@ -114,7 +114,7 @@ test("page turn starts a new current-page section", async ({ browser }) => {
   await expect(viewer.getByTestId("word-card-meticulous")).toBeVisible({
     timeout: 5_000,
   });
-  const olderSection = viewer.getByLabel("이전 페이지 단어");
+  const olderSection = viewer.getByLabel("earlier page words");
   await expect(
     olderSection.getByTestId("word-card-ephemeral"),
   ).toBeVisible();
